@@ -1,305 +1,195 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Reconnaissance d'objet</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 1.5rem;
-      color: #1a1a1a;
-    }
-    .card {
-      background: #ffffff;
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-    .title {
-      font-size: 15px;
-      font-weight: 500;
-    }
-    .badge {
-      display: inline-block;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 999px;
-    }
-    .badge-on  { background: #E1F5EE; color: #0F6E56; }
-    .badge-off { background: #eeeeee; color: #888888; }
-    #webcam-wrap {
-      display: flex;
-      justify-content: center;
-    }
-    #webcam-container canvas {
-      border-radius: 8px;
-      display: block;
-    }
-    .btn-wrap {
-      text-align: center;
-      margin-top: 1rem;
-    }
-    button {
-      cursor: pointer;
-      padding: 10px 24px;
-      border-radius: 8px;
-      border: 1px solid #cccccc;
-      background: transparent;
-      color: #1a1a1a;
-      font-size: 15px;
-      transition: background 0.15s;
-    }
-    button:hover    { background: #f0f0f0; }
-    button:disabled { opacity: 0.4; cursor: not-allowed; }
-    #status {
-      font-size: 13px;
-      color: #888888;
-      margin-top: 8px;
-      text-align: center;
-    }
-    #result-box {
-      min-height: 90px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    #result-label {
-      font-size: 20px;
-      font-weight: 500;
-      color: #1a1a1a;
-      margin-bottom: 4px;
-      text-align: center;
-    }
-    #result-text {
-      font-size: 15px;
-      color: #666666;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    #speech-bubble {
-      display: none;
-      background: #f0f0f0;
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      padding: 10px 16px;
-      font-size: 15px;
-      color: #1a1a1a;
-      text-align: center;
-      margin-top: 8px;
-      font-style: italic;
-      max-width: 320px;
-    }
-    #speech-bubble.speaking {
-      background: #E1F5EE;
-      border-color: #5DCAA5;
-    }
-    #confidence-bar-wrap {
-      width: 100%;
-      max-width: 320px;
-      background: #eeeeee;
-      border-radius: 999px;
-      height: 6px;
-      margin-top: 8px;
-      overflow: hidden;
-    }
-    #confidence-bar {
-      height: 6px;
-      border-radius: 999px;
-      background: #1D9E75;
-      width: 0%;
-      transition: width 0.3s;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reconnaissance d'objet</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: sans-serif; background: #f5f5f5; display: flex; flex-direction: column; align-items: center; padding: 1.5rem; }
+  .card { background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; width: 100%; max-width: 360px; }
+  #video { border-radius: 8px; display: none; width: 100%; }
+  #canvas { display: none; }
+  #result-box { min-height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #result-label { font-size: 20px; font-weight: 500; text-align: center; margin-bottom: 4px; color: #888; }
+  #result-text { font-size: 15px; color: #888; text-align: center; margin-bottom: 8px; }
+  #speech-bubble { display: none; background: #f0f0f0; border-radius: 12px; padding: 10px 16px; font-size: 15px; text-align: center; font-style: italic; max-width: 320px; margin-top: 8px; }
+  #confidence-bar-wrap { width: 100%; max-width: 320px; background: #e0e0e0; border-radius: 999px; height: 6px; margin-top: 8px; display: none; overflow: hidden; }
+  #confidence-bar { height: 6px; border-radius: 999px; background: #1D9E75; width: 0%; transition: width 0.3s; }
+  button { cursor: pointer; padding: 10px 24px; border-radius: 8px; border: 1px solid #ccc; background: transparent; font-size: 15px; width: 100%; margin-top: 1rem; }
+  button:hover { background: #f0f0f0; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #status { font-size: 13px; color: #888; margin-top: 8px; text-align: center; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .badge-on { background: #E1F5EE; color: #0F6E56; }
+  .badge-off { background: #eee; color: #888; }
+  .speaking { background: #E1F5EE !important; }
+  h2 { font-size: 15px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+</style>
 </head>
 <body>
 
-  <div class="card">
-    <div class="header">
-      <span class="title">Reconnaissance d'objet</span>
-      <span id="live-badge" class="badge badge-off">inactif</span>
-    </div>
-    <div id="webcam-wrap">
-      <div id="webcam-container"></div>
-    </div>
-    <div class="btn-wrap">
-      <button id="start-btn" onclick="init()">Démarrer la caméra</button>
-    </div>
-    <p id="status"></p>
-  </div>
+<div class="card">
+  <h2>Reconnaissance d'objet <span id="live-badge" class="badge badge-off">inactif</span></h2>
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas" width="280" height="280"></canvas>
+  <button id="start-btn" onclick="init()">Démarrer la caméra</button>
+  <p id="status"></p>
+</div>
 
-  <div class="card" id="result-box">
-    <div id="result-label" style="color:#888888; font-size:16px; font-weight:400;">En attente de détection…</div>
-    <div id="result-text"></div>
-    <div id="speech-bubble"></div>
-    <div id="confidence-bar-wrap" style="display:none;">
-      <div id="confidence-bar"></div>
-    </div>
-  </div>
+<div class="card" id="result-box">
+  <div id="result-label">En attente de détection…</div>
+  <div id="result-text"></div>
+  <div id="speech-bubble"></div>
+  <div id="confidence-bar-wrap"><div id="confidence-bar"></div></div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-  <script>
-    const MODEL_URL = "https://teachablemachine.withgoogle.com/models/ZTqEOsuzJ/";
-    const THRESHOLD = 0.75;
-    const SILENCE_DELAY = 4000;
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+<script>
+const MODEL_URL = "https://teachablemachine.withgoogle.com/models/ZTqEOsuzJ/";
+const THRESHOLD = 0.80;
+const COOLDOWN = 6000;
+const SILENCE_DELAY = 4000;
 
-    const CATALOGUE = {
-      "nettoyant": {
-        label: "Nettoyant écran",
-        text: "Un produit pour nettoyer les écrans des ordinateurs",
-        phrases: [
-          "Chouette, je vais pouvoir nettoyer mon écran !",
-          "Enfin ! Mon écran en avait bien besoin.",
-          "Super, place à la propreté !",
-          "Ah, un écran propre, ça va faire du bien.",
-          "Parfait, je vais retrouver un écran comme neuf !"
-        ]
-      },
-      "ventilateur": {
-        label: "Ventilateur USB",
-        text: "Un petit ventilateur USB, c'est toujours utile.",
-        phrases: [
-          "J'avais chaud, je vais enfin pouvoir me rafraîchir !",
-          "Ah, un peu de fraîcheur, ça fait du bien !",
-          "Enfin de l'air frais, je commençais à surchauffer.",
-          "Super, la chaleur c'est terminé !",
-          "Un ventilateur ! Mes circuits vont souffler un peu."
-        ]
-      }
-    };
+const CATALOGUE = {
+  "nettoyant": {
+    label: "Nettoyant écran",
+    text: "Un produit pour nettoyer les écrans des ordinateurs",
+    phrases: [
+      "Chouette, je vais pouvoir nettoyer mon écran !",
+      "Enfin ! Mon écran en avait bien besoin.",
+      "Super, place à la propreté !",
+      "Ah, un écran propre, ça va faire du bien.",
+      "Parfait, je vais retrouver un écran comme neuf !"
+    ]
+  },
+  "ventilateur": {
+    label: "Ventilateur USB",
+    text: "Un petit ventilateur USB, c'est toujours utile.",
+    phrases: [
+      "J'avais chaud, je vais enfin pouvoir me rafraîchir !",
+      "Ah, un peu de fraîcheur, ça fait du bien !",
+      "Enfin de l'air frais, je commençais à surchauffer.",
+      "Super, la chaleur c'est terminé !",
+      "Un ventilateur ! Mes circuits vont souffler un peu."
+    ]
+  }
+};
 
-    let model, webcam, running = false;
-    let lastSpoken = null;
-    let lastSpokenTime = 0;
-    let isSpeaking = false;
-    let silenceTimer = null;
+let model, running = false;
+let videoEl, canvasEl, ctx;
+let lastSpokenIdx = null, lastSpokenTime = 0, isSpeaking = false, silenceTimer = null;
 
-    function pickPhrase(key) {
-      const phrases = CATALOGUE[key].phrases;
-      let idx;
-      do { idx = Math.floor(Math.random() * phrases.length); }
-      while (phrases.length > 1 && idx === lastSpoken);
-      lastSpoken = idx;
-      return phrases[idx];
+function pickPhrase(key) {
+  const phrases = CATALOGUE[key].phrases;
+  let idx;
+  do { idx = Math.floor(Math.random() * phrases.length); }
+  while (phrases.length > 1 && idx === lastSpokenIdx);
+  lastSpokenIdx = idx;
+  return phrases[idx];
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = "fr-FR";
+  utt.rate = 1.05;
+  utt.pitch = 1.1;
+  const bubble = document.getElementById("speech-bubble");
+  const box = document.getElementById("result-box");
+  bubble.textContent = "\u201c" + text + "\u201d";
+  bubble.style.display = "block";
+  box.classList.add("speaking");
+  isSpeaking = true;
+  utt.onend = () => { isSpeaking = false; box.classList.remove("speaking"); };
+  window.speechSynthesis.speak(utt);
+}
+
+async function init() {
+  const btn = document.getElementById("start-btn");
+  btn.disabled = true;
+  document.getElementById("status").textContent = "Chargement du modèle…";
+  try {
+    model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+    videoEl = document.getElementById("video");
+    canvasEl = document.getElementById("canvas");
+    ctx = canvasEl.getContext("2d");
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { exact: "environment" }, width: 280, height: 280 }
+    }).catch(() => navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: 280, height: 280 }
+    }));
+
+    videoEl.srcObject = stream;
+    videoEl.style.display = "block";
+    document.getElementById("live-badge").textContent = "actif";
+    document.getElementById("live-badge").className = "badge badge-on";
+    document.getElementById("status").textContent = "";
+    btn.textContent = "Actif";
+    btn.disabled = true;
+    running = true;
+    loop();
+  } catch(e) {
+    document.getElementById("status").textContent = "Erreur : " + e.message;
+    btn.disabled = false;
+  }
+}
+
+async function loop() {
+  if (!running) return;
+  ctx.drawImage(videoEl, 0, 0, 280, 280);
+  await predict();
+  requestAnimationFrame(loop);
+}
+
+async function predict() {
+  const predictions = await model.predict(canvasEl);
+  const best = predictions.reduce((a, b) => a.probability > b.probability ? a : b);
+  const labelEl = document.getElementById("result-label");
+  const textEl = document.getElementById("result-text");
+  const bar = document.getElementById("confidence-bar");
+  const barWrap = document.getElementById("confidence-bar-wrap");
+  const bubble = document.getElementById("speech-bubble");
+  const box = document.getElementById("result-box");
+
+  const key = best.className.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const matchKey = Object.keys(CATALOGUE).find(k => key.includes(k));
+  const now = Date.now();
+
+  if (matchKey && best.probability >= THRESHOLD) {
+    const info = CATALOGUE[matchKey];
+    labelEl.textContent = info.label;
+    labelEl.style.color = "#111";
+    labelEl.style.fontSize = "20px";
+    labelEl.style.fontWeight = "500";
+    textEl.textContent = info.text;
+    barWrap.style.display = "block";
+    bar.style.width = Math.round(best.probability * 100) + "%";
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+    if (!isSpeaking && (lastSpokenTime === 0 || now - lastSpokenTime > COOLDOWN)) {
+      lastSpokenTime = now;
+      speak(pickPhrase(matchKey));
     }
-
-    function speak(text) {
-      if (!window.speechSynthesis) return;
-      window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance(text);
-      utt.lang = "fr-FR";
-      utt.rate = 1.05;
-      utt.pitch = 1.1;
-
-      const bubble = document.getElementById("speech-bubble");
-      bubble.textContent = "\u201c" + text + "\u201d";
-      bubble.style.display = "block";
-      bubble.classList.add("speaking");
-      isSpeaking = true;
-
-      utt.onend = () => {
-        isSpeaking = false;
-        bubble.classList.remove("speaking");
-      };
-      window.speechSynthesis.speak(utt);
+  } else {
+    labelEl.textContent = "Aucun objet reconnu";
+    labelEl.style.color = "#888";
+    labelEl.style.fontSize = "16px";
+    labelEl.style.fontWeight = "400";
+    textEl.textContent = "";
+    barWrap.style.display = "none";
+    if (!silenceTimer) {
+      silenceTimer = setTimeout(() => {
+        bubble.style.display = "none";
+        box.classList.remove("speaking");
+        lastSpokenTime = 0;
+        silenceTimer = null;
+      }, SILENCE_DELAY);
     }
-
-    async function init() {
-      const btn = document.getElementById("start-btn");
-      btn.disabled = true;
-      document.getElementById("status").textContent = "Chargement du modèle…";
-
-      try {
-        model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
-        webcam = new tmImage.Webcam(280, 280, true);
-        await webcam.setup();
-        await webcam.play();
-
-        document.getElementById("webcam-container").appendChild(webcam.canvas);
-        document.getElementById("live-badge").textContent = "actif";
-        document.getElementById("live-badge").className = "badge badge-on";
-        document.getElementById("status").textContent = "";
-        btn.textContent = "Actif";
-
-        running = true;
-        loop();
-      } catch(e) {
-        document.getElementById("status").textContent = "Erreur : " + e.message;
-        btn.disabled = false;
-      }
-    }
-
-    async function loop() {
-      if (!running) return;
-      webcam.update();
-      await predict();
-      requestAnimationFrame(loop);
-    }
-
-    async function predict() {
-      const predictions = await model.predict(webcam.canvas);
-      let best = predictions.reduce((a, b) => a.probability > b.probability ? a : b);
-
-      const labelEl = document.getElementById("result-label");
-      const textEl  = document.getElementById("result-text");
-      const bar     = document.getElementById("confidence-bar");
-      const barWrap = document.getElementById("confidence-bar-wrap");
-      const bubble  = document.getElementById("speech-bubble");
-
-      const key = best.className.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const matchKey = Object.keys(CATALOGUE).find(k => key.includes(k));
-      const now = Date.now();
-
-      if (matchKey && best.probability >= THRESHOLD) {
-        const info = CATALOGUE[matchKey];
-        labelEl.textContent  = info.label;
-        labelEl.style.color  = "#1a1a1a";
-        labelEl.style.fontSize   = "20px";
-        labelEl.style.fontWeight = "500";
-        textEl.textContent   = info.text;
-        barWrap.style.display = "block";
-        bar.style.width = Math.round(best.probability * 100) + "%";
-
-        if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-
-        const cooldown = 6000;
-        if (!isSpeaking && (lastSpokenTime === 0 || now - lastSpokenTime > cooldown)) {
-          lastSpokenTime = now;
-          speak(pickPhrase(matchKey));
-        }
-
-      } else {
-        labelEl.textContent  = "Aucun objet reconnu";
-        labelEl.style.color  = "#888888";
-        labelEl.style.fontSize   = "16px";
-        labelEl.style.fontWeight = "400";
-        textEl.textContent   = "";
-        barWrap.style.display = "none";
-
-        if (!silenceTimer) {
-          silenceTimer = setTimeout(() => {
-            bubble.style.display = "none";
-            bubble.classList.remove("speaking");
-            lastSpokenTime = 0;
-            silenceTimer = null;
-          }, SILENCE_DELAY);
-        }
-      }
-    }
-  </script>
+  }
+}
+</script>
 </body>
 </html>
